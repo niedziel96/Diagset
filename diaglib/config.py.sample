@@ -1,0 +1,122 @@
+from pathlib import Path
+
+
+PROJECT_ROOT_PATH = Path(__file__).parents[1]
+DATA_PATH = PROJECT_ROOT_PATH / 'data'
+MODELS_PATH = PROJECT_ROOT_PATH / 'models'
+LOGS_PATH = PROJECT_ROOT_PATH / 'logs'
+PREDICTIONS_PATH = PROJECT_ROOT_PATH / 'predictions'
+PARAMS_PATH = PROJECT_ROOT_PATH / 'params'
+
+DIAGSET_ROOT_PATH = DATA_PATH / 'DiagSet'
+DIAGSET_SCANS_PATH = DIAGSET_ROOT_PATH / 'scans'
+DIAGSET_ANNOTATIONS_PATH = DIAGSET_ROOT_PATH / 'annotations'
+DIAGSET_BLOBS_PATH = DIAGSET_ROOT_PATH / 'blobs'
+DIAGSET_POSITIONS_PATH = DIAGSET_ROOT_PATH / 'positions'
+DIAGSET_DISTRIBUTIONS_PATH = DIAGSET_ROOT_PATH / 'distributions'
+DIAGSET_METADATA_PATH = DIAGSET_ROOT_PATH / 'metadata'
+DIAGSET_PARTITIONS_PATH = DIAGSET_ROOT_PATH / 'partitions'
+DIAGSET_DEBUG_PATH = DIAGSET_ROOT_PATH / 'debug'
+DIAGSET_SCAN_INFO_FILE_PATH = DIAGSET_ROOT_PATH / 'scan_info.xlsx'
+
+SEGSET_ROOT_PATH = DATA_PATH / 'SegSet'
+SEGSET_TRAIN_SET_PATH = SEGSET_ROOT_PATH / 'train'
+SEGSET_TEST_SET_PATH = SEGSET_ROOT_PATH / 'test'
+
+IMAGENET_ROOT_PATH = DATA_PATH / 'ImageNet'
+IMAGENET_ORIGINAL_TRAIN_SET_PATH = IMAGENET_ROOT_PATH / 'ILSVRC2012_img_train'
+IMAGENET_ORIGINAL_VALIDATION_SET_PATH = IMAGENET_ROOT_PATH / 'ILSVRC2012_img_val'
+IMAGENET_ORIGINAL_METADATA_PATH = IMAGENET_ROOT_PATH / 'ILSVRC2012_devkit_t12' / 'data' / 'meta.mat'
+IMAGENET_ORIGINAL_LABELS_PATH = IMAGENET_ROOT_PATH / 'ILSVRC2012_devkit_t12' / 'data' / \
+                                'ILSVRC2012_validation_ground_truth.txt'
+IMAGENET_BLOBS_PATH = IMAGENET_ROOT_PATH / 'blobs'
+
+NDP_USERNAME = None
+NDP_PASSWORD = None
+NDP_SERVER_ADDRESS = '192.168.252.20'
+NDP_BASE_API_URL = 'http://%s/ndp/serve/api/' % NDP_SERVER_ADDRESS
+NDP_BASE_IMAGE_SERVER_URL = 'http://%s/ndp/imageserver/' % NDP_SERVER_ADDRESS
+NDP_SESSION_TIMEOUT_SECONDS = 900
+
+DB_UID = None
+DB_PWD = None
+DB_DRIVER = 'SQL Server'
+DB_SERVER_ADDRESS = '192.168.252.20'
+DB_DATABASE_NAME = 'ndpServeDB'
+
+REQUESTS_ROOT_PATH = PROJECT_ROOT_PATH / 'requests'
+REQUESTS_DB_PATH = REQUESTS_ROOT_PATH / 'db.sqlite'
+REQUESTS_SERVER_LOG_PATH = REQUESTS_ROOT_PATH / 'server.log'
+REQUESTS_RUNNER_LOG_PATH = REQUESTS_ROOT_PATH / 'runner.log'
+REQUESTS_PROCESSING_TIMEOUT_SECONDS = 3600
+REQUESTS_MIN_DELAY_BETWEEN_DB_CHECKS_SECONDS = 60
+REQUESTS_HOST = '0.0.0.0'
+REQUESTS_PORT = 5000
+
+SERVE_BINARY_PREDICTIONS = True
+
+TISSUE_TAGS = ['J', 'S', 'P']
+
+EXTRACTED_LABELS = {
+    'J': ['BG', 'P=BG', 'T', 'P=T', 'N', 'P=N', 'A', 'P=A', 'R', 'P=R', 'RS', 'P=RS', 'X', 'P=X'],
+    'S': ['BG', 'P=BG', 'T', 'P=T', 'N', 'P=N', 'A', 'P=A', 'R1', 'P=R1', 'R2', 'P=R2', 'R3', 'P=R3', 'R4', 'P=R4', 'R5', 'P=R5'],
+    'P': ['BG', 'P=BG', 'T', 'P=T', 'N', 'P=N', 'A', 'P=A', 'R1', 'P=R1', 'R2', 'P=R2']
+}
+
+IGNORED_LABELS = {
+    'J': ['P'],
+    'S': ['P'],
+    'P': ['P']
+}
+
+LABEL_TRANSLATIONS = {
+    'J': {'P=BG': 'BG', 'P=T': 'T', 'P=N': 'N', 'P=A': 'A', 'P=R': 'R', 'P=RS': 'RS', 'P=X': 'X'},
+    'S': {'P=BG': 'BG', 'P=T': 'T', 'P=N': 'N', 'P=A': 'A', 'P=R1': 'R1', 'P=R2': 'R2', 'P=R3': 'R3', 'P=R4': 'R4', 'P=R5': 'R5'},
+    'P': {'P=BG': 'BG', 'P=T': 'T', 'P=N': 'N', 'P=A': 'A', 'P=R1': 'R1', 'P=R2': 'R2'}
+}
+
+USABLE_LABELS = {
+    tag: [
+        label for label in EXTRACTED_LABELS[tag] if label not in LABEL_TRANSLATIONS[tag].keys()
+    ] for tag in TISSUE_TAGS
+}
+
+LABEL_ORDER = {
+    'J': ['R', 'RS', 'X', 'A', 'N', 'T', 'BG'],
+    'S': ['R5', 'R4', 'R3', 'R2', 'R1', 'A', 'N', 'T', 'BG'],
+    'P': ['R2', 'R1', 'A', 'N', 'T', 'BG']
+}
+
+LABEL_DICTIONARIES = {
+    'J': {
+        'BG': 0, 'T': 1, 'N': 2, 'A': 3, 'R': 4, 'RS': 5, 'X': 6
+    },
+    'S': {
+        'BG': 0, 'T': 1, 'N': 2, 'A': 3, 'R1': 4, 'R2': 5, 'R3': 6, 'R4': 7, 'R5': 8
+    },
+    'P': {
+        'BG': 0, 'T': 1, 'N': 2, 'A': 3, 'R1': 4, 'R2': 5
+    }
+}
+
+ORGAN_TO_TAG_MAPPING = {
+    u'stercz': 'S',
+    u'prostata': 'S',
+    u'gruczoł krokowy': 'S',
+    u'jelito grube': 'J',
+    u'esica': 'J',
+    u'kątnica': 'J',
+    u'odbytnica': 'J',
+    u'okrężnica': 'J',
+    u'poprzecznica': 'J',
+    u'wstępnica': 'J',
+    u'zstępnica': 'J',
+    u'płuco': 'P',
+    u'oskrzele': 'P'
+}
+
+ENSEMBLE_PARAMETERS = {
+    'J': None,
+    'S': None,
+    'P': None
+}
