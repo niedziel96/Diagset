@@ -2,10 +2,10 @@ import json
 import logging
 import numpy as np
 import pandas as pd
-
+import os 
 from abc import ABC, abstractmethod
 from diaglib import config
-from diaglib.data.diagset.loading import ndp, db, local
+# from diaglib.data.diagset.loading import ndp, db, local
 from diaglib.data.diagset.loading.common import prepare_multipolygons
 from diaglib.data.diagset.paths import get_nested_path
 from diaglib.data.imagenet.containers import IMAGENET_IMAGE_MEAN
@@ -13,7 +13,7 @@ from diaglib.predict.maps.common import segment_foreground_vdsr
 from queue import Queue
 from shapely.geometry.polygon import Polygon
 from threading import Thread
-
+from pathlib import Path
 
 class AbstractDiagSetDataset(ABC):
     def __init__(self, tissue_tag, partitions, magnification=40, batch_size=32, patch_size=(224, 224),
@@ -64,11 +64,13 @@ class AbstractDiagSetDataset(ABC):
         self.root_distributions_path = get_nested_path(
             config.DIAGSET_DISTRIBUTIONS_PATH, tissue_tag, magnification
         )
-
+        self.root_distributions_path = Path(os.path.join(self.root_distributions_path, '256x256', '128x128','0.75'))
+        self.root_blobs_path = Path(os.path.join(self.root_blobs_path, '256x256', '128x128','0.75'))
+        print(f" ********** {self.root_blobs_path} ********")
         assert self.root_blobs_path.exists()
 
         self.scan_names = [path.name for path in self.root_blobs_path.iterdir()]
-
+        
         partition_scan_names = []
 
         for partition in self.partitions:
@@ -76,7 +78,7 @@ class AbstractDiagSetDataset(ABC):
 
             if partition_path.exists():
                 df = pd.read_csv(partition_path)
-                partition_scan_names += df['scan_id'].astype(np.str).tolist()
+                partition_scan_names += df['scan_id'].astype(str).tolist()
             else:
                 raise ValueError('Partition file not found under "%s".' % partition_path)
 
@@ -104,31 +106,51 @@ class AbstractDiagSetDataset(ABC):
 
         logging.getLogger('diaglib').info('Loading blob paths...')
 
+        errored_dist = []
         for scan_name in self.scan_names:
+            ignored = []
             for string_label in config.USABLE_LABELS[tissue_tag]:
                 numeric_label = self.label_dictionary[string_label]
-                blob_names = map(lambda x: x.name, sorted((self.root_blobs_path / scan_name / string_label).iterdir()))
+                pth = Path((f'{self.root_blobs_path}/{scan_name}/{string_label}'))
 
+                if pth.exists():
+                    blbs_list = [x for x in pth.iterdir()]
+                    blob_names = map(lambda x: x.name, sorted(blbs_list))
+                else:
+                    print(f'Not found for: {string_label}')
+                    
+                    ignored.append(string_label)
+                    continue 
+                
                 for blob_name in blob_names:
                     self.blob_paths[numeric_label].append(self.root_blobs_path / scan_name / string_label / blob_name)
 
             with open(self.root_distributions_path / ('%s.json' % scan_name), 'r') as f:
                 scan_class_distribution = json.load(f)
 
+            
             self.length += sum(scan_class_distribution.values())
 
             for string_label in config.USABLE_LABELS[tissue_tag]:
+                print(string_label)
                 numeric_label = self.label_dictionary[string_label]
 
-                self.class_distribution[numeric_label] += scan_class_distribution[string_label]
-
+                try:
+                    self.class_distribution[numeric_label] += scan_class_distribution[string_label]
+                except:
+                    print('*** no class found ***')
+                    continue
+                    
         if class_ratios is None:
             self.class_ratios = {}
 
             for numeric_label in self.numeric_labels:
+                print(self.length)
                 self.class_ratios[numeric_label] = self.class_distribution[numeric_label] / self.length
         else:
             self.class_ratios = class_ratios
+
+        print(self.class_ratios)
 
         logging.getLogger('diaglib').info('Found %d patches.' % self.length)
 

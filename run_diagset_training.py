@@ -6,6 +6,7 @@ from diaglib import config
 from diaglib.data.diagset.containers import TrainingDiagSetDataset, EvaluationDiagSetDataset
 from diaglib.learn.cnn.classify.model_classes import MODEL_CLASSES
 from diaglib.learn.cnn.classify.trainers import Trainer
+from diaglib.learn.cnn.classify.trainer_VIT import TrainerVIT, TrainerConfig
 
 
 logging.basicConfig(level=logging.INFO)
@@ -26,8 +27,8 @@ parser.add_argument('-magnification', type=int, choices=[5, 10, 20, 40], require
 parser.add_argument('-minimum_learning_rate', type=float)
 parser.add_argument('-minimum_overlap', type=float, default=0.75)
 parser.add_argument('-momentum', type=float, default=0.9)
-parser.add_argument('-name', type=str, required=True)
-parser.add_argument('-network', type=str, choices=MODEL_CLASSES.keys(), required=True)
+# parser.add_argument('-name', type=str, required=True)
+parser.add_argument('-network', type=str, required=True)
 parser.add_argument('-optimizer', type=str, default='sgd', choices=['adam', 'sgd'])
 parser.add_argument('-patch_size', type=int, default=224)
 parser.add_argument('-pretrained_model', type=str)
@@ -46,7 +47,7 @@ label_dictionary = config.LABEL_DICTIONARIES[args.tissue_tag]
 logging.info('Constructing model...')
 
 model_class = MODEL_CLASSES[args.network]
-network = model_class(args.name, [len(set(label_dictionary.values()))], [args.patch_size, args.patch_size, 3])
+# network = model_class(args.name, [len(set(label_dictionary.values()))], [args.patch_size, args.patch_size, 3])
 
 logging.info('Loading training dataset...')
 
@@ -119,27 +120,50 @@ test_set = EvaluationDiagSetDataset(
     augment=False,
     shuffling=False
 )
+tconf = TrainerConfig(max_epochs=args.epochs, batch_size=args.batch_size, learning_rate=args.learning_rate)
 
-trainer = Trainer(
-    network,
-    train_set,
-    args.epochs,
-    args.learning_rate,
-    args.weight_decay,
-    validation_set,
-    test_set,
-    evaluation_train_set,
-    decay_step=args.decay_step,
-    decay_on_validation_error=args.decay_on_validation_error,
-    decay_rate=args.decay_rate,
-    minimum_learning_rate=args.minimum_learning_rate,
-    optimizer=args.optimizer,
-    momentum=args.momentum,
-    early_stopping=args.early_stopping,
-    compute_train_accuracy=args.compute_train_accuracy,
-    pretrained_model=args.pretrained_model,
-    plot_confusion_matrix=True,
-    params=vars(args)
-)
+model_config = {"image_size":args.patch_size,
+                "patch_size":32,
+                "num_classes":len(set(label_dictionary.values())),
+                "dim":1024,
+                "depth":3,
+                "heads":4,
+                "mlp_dim":2048}
+
+trainer = TrainerVIT(model_class,
+                     model_config,
+                     train_set,
+                     train_set.length,
+                     validation_set,
+                     validation_set.length,
+                     tconf,
+                     args.weight_decay,
+                     args.optimizer,
+                     args.decay_step,
+                     args.decay_rate,
+                     args.momentum)
+    
+
+# trainer = Trainer(
+#     network,
+#     train_set,
+#     args.epochs,
+#     args.learning_rate,
+#     args.weight_decay,
+#     validation_set,
+#     test_set,
+#     evaluation_train_set,
+#     decay_step=args.decay_step,
+#     decay_on_validation_error=args.decay_on_validation_error,
+#     decay_rate=args.decay_rate,
+#     minimum_learning_rate=args.minimum_learning_rate,
+#     optimizer=args.optimizer,
+#     momentum=args.momentum,
+#     early_stopping=args.early_stopping,
+#     compute_train_accuracy=args.compute_train_accuracy,
+#     pretrained_model=args.pretrained_model,
+#     plot_confusion_matrix=True,
+#     params=vars(args)
+# )
 
 trainer.train()
